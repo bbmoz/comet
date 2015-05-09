@@ -5,18 +5,18 @@
     Game
   ************/
   function Game() {
-    var htmlWidth, htmlHeight;
-
+    // init values
     this.ignoredElements = ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
     this.fps = 50;
+
+    // create game container
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'comet-canvas';
-    htmlWidth = document.documentElement.clientWidth;
-    htmlHeight = document.documentElement.clientHeight;
-    this.canvas.setAttribute('width', htmlWidth);
-    this.canvas.setAttribute('height', htmlHeight);
+    this.canvas.setAttribute('width', document.documentElement.clientWidth);
+    this.canvas.setAttribute('height', document.documentElement.clientHeight);
     this.canvas.style.width = htmlWidth + 'px';
     this.canvas.style.height = htmlHeight + 'px';
+    document.body.appendChild(this.canvas);
   }
 
   /************
@@ -63,33 +63,44 @@
     },
   };
 
-  (function addUserEventListeners() {
-    var $body = document.getElementByTagName('body')[0],
-        keysPressed = false,
-        mouseStartPos, mouseEndPos;
+  function init() {
+    function addUserEventListeners() {
+      var $body = document.getElementByTagName('body')[0],
+          keysPressed = false,
+          mouseStartPos, mouseEndPos,
+          keysPressed = {
+            'Alt': false,
+            'Win': false, 'OS': false,
+            'c': false,
+            'success': false
+          };
 
-    $body.addEventListener('keypress', function (e) {
-      var keysPressed = e.sources;
-      if (keysPressed.indexOf('fn') !== -1 &&
-          keysPressed.indexOf('window/command') !== -1 &&
-          keysPressed.indexOf('c')) {
-        keysPressed = true;
-      }
-    });
-    $body.addEventListener('click', function (e) {
-      var mousePos = e.source.position;
-      if (keysPressed) {
-        mouseStartPos = mousePos;
-      }
-    });
-    $body.addEventListener('unclick', function (e) {
-      var mousePos = e.source.position;
-      if (keysPressed) {
-        mouseEndPos = mousePos;
-        var length = getLengthBetween(mouseStartPos, mouseEndPos);
-        var startAngle = getAngleOf(mouseStartPos, mouseEndPos);
-        createNewComet(mouseStartPos, length, startAngle);
-      }
-    });
-  }());
+      $body.addEventListener('keydown', function (e) {
+        if (e.key in keysPressed) {
+          keysPressed[e.key] = true;
+          if (keysPressed['Alt'] &&
+              (keysPressed['Win'] || keysPressed['OS']) &&
+              keysPressed['c']) {
+            keysPressed['success'] = true;
+          }
+        }
+      });
+      $body.addEventListener('keyup', function (e) {
+        if (e.key in keysPressed) {
+          keysPressed[e.key] = false;
+          if (keysPressed['success']) {
+            keysPressed['success'] = false;
+          }
+        }
+      });
+      $body.addEventListener('click', function (e) {
+        if (keysPressed['success']) {
+          var comet = new Comet(e.clientX, e.clientY);
+          comet.spawn();
+        }
+      });
+    }
+
+    var game = new Game();
+  }
 }());
