@@ -1,6 +1,16 @@
 (function cometSpawner() {
   var $body = document.getElementByTagName('body')[0],
-      game, loop;
+      game, loop,
+      resizeRunning = false;
+
+  var Utility = {
+    htmlSize: function htmlSize() {
+      return {
+        width: document.documentElement.clientWidth,
+        height: document.documentElement.clientHeight
+      };
+    }
+  };
 
   /***************
     Game Object
@@ -9,7 +19,15 @@
     this.ignoredElements = ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
     this.fps = 50;
     this.comets = [];
-    this.keydownEvent = function (e) {
+    this.canvas = document.createElement('canvas');
+
+    var keysPressed = {
+      'Alt': false,
+      'Win': false, 'OS': false,
+      'c': false,
+      'success': false
+    };
+    function keydownEvent(e) {
       if (e.key in keysPressed) {
         keysPressed[e.key] = true;
         if (keysPressed['Alt'] &&
@@ -19,7 +37,7 @@
         }
       }
     };
-    this.keyupEvent = function (e) {
+    function keyupEvent(e) {
       if (e.key in keysPressed) {
         keysPressed[e.key] = false;
         if (keysPressed['success']) {
@@ -27,7 +45,7 @@
         }
       }
     };
-    this.clickEvent = function (e) {
+    function clickEvent(e) {
       if (e.button === 0) {
         if (keysPressed['success']) {
           var comet = new Comet(e.clientX, e.clientY);
@@ -41,46 +59,59 @@
         }
       }
     };
+    function resizeEvent() {
+      function resizeCanvas() {
+        this.canvas.style.display = 'none';
+        var htmlSize = Utility.htmlSize();
+        this.canvas.setAttribute('width', htmlSize.width);
+        this.canvas.setAttribute('height', htmlSize.height);
+        resizeRunning = false;
+      }
+
+      if (!resizeRunning) {
+        resizeRunning = true;
+        if (window.requestAnimationFrame) {
+          window.requestAnimationFrame(resizeCanvas);
+        }
+      }
+    };
+
+    this.events = new Map();
+    events.set('keydown', keydownEvent);
+    events.set('keyup', keyupEvent);
+    events.set('click', clickEvent);
+    events.set('resize', resizeEvent);
   }
 
   Game.prototype = {
     init: function init() {
-      (function addUserEventListeners() {
-        var keysPressed = false,
-            mouseStartPos, mouseEndPos,
-            keysPressed = {
-              'Alt': false,
-              'Win': false, 'OS': false,
-              'c': false,
-              'success': false
-            };
-
-        $body.addEventListener('keydown', this.keydownEvent);
-        $body.addEventListener('keyup', this.keyupEvent);
-        $body.addEventListener('click', this.clickEvent);
-      }());
+      for (let [eventName, eventFunc] of this.events.entries()) {
+        $body.addEventListener(eventName, eventFunc);
+      }
     },
 
     start: function start() {
-      this.canvas = document.createElement('canvas');
+      var htmlSize = Utility.htmlSize();
+      this.canvas.setAttribute('width', htmlSize.width);
+      this.canvas.setAttribute('height', htmlSize.height);
+      this.canvas.style.width = htmlSize.width + 'px';
+      this.canvas.style.height = htmlSize.height + 'px';
       this.canvas.className = 'comet-canvas';
-      this.canvas.setAttribute('width', document.documentElement.clientWidth);
-      this.canvas.setAttribute('height', document.documentElement.clientHeight);
-      this.canvas.style.width = htmlWidth + 'px';
-      this.canvas.style.height = htmlHeight + 'px';
       document.body.appendChild(this.canvas);
       loop = setInterval(game.update, 1000 / game.fps);
     },
 
     update: function update() {
-      
+      this.comets.forEach(function (comet) {
+        comet.move();
+      });
     },
 
     end: function end() {
       clearInterval(loop);
-      $body.removeEventListener('keydown', this.keydownEvent);
-      $body.removeEventListener('keyup', this.keyupEvent);
-      $body.removeEventListener('click', this.clickEvent);
+      for (let [eventName, eventFunc] of this.events.entries()) {
+        $body.removeEventListener(eventName, eventFunc);
+      }
       document.body.removeChild(this.canvas);
     }
   };
@@ -122,11 +153,12 @@
 
     move: function move() {
       // move towards denser elements
+
     },
 
     spawn: function spawn() {
       game.comets.push(this);
-    },
+    }
   };
 
  // runner
