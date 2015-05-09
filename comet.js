@@ -5,15 +5,19 @@
     Game
   ************/
   function Game() {
+    var htmlWidth, htmlHeight;
+
     this.ignoredElements = ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
     this.fps = 50;
+    this.canvas = document.createElement('canvas');
+    this.canvas.className = 'comet-canvas';
+    htmlWidth = document.documentElement.clientWidth;
+    htmlHeight = document.documentElement.clientHeight;
+    this.canvas.setAttribute('width', htmlWidth);
+    this.canvas.setAttribute('height', htmlHeight);
+    this.canvas.style.width = htmlWidth + 'px';
+    this.canvas.style.height = htmlHeight + 'px';
   }
-
-  Game.prototype = {
-    start: function start() {
-      this.iframe = document.createElement('iframe');
-    }
-  };
 
   /************
     Comet
@@ -21,6 +25,7 @@
   function Comet(x, y) {
     this.x = x;
     this.y = y;
+    this.size = 5;
   }
 
   Comet.prototype = {
