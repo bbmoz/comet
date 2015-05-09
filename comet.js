@@ -127,26 +127,21 @@
 
   Comet.prototype = {
     length: function length(point) {
-      var xDiff, yDiff, length;
-
+      var xDiff, yDiff;
       xDiff = point.x - this.x;
       yDiff = point.y - this.y;
-
       return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
     },
 
     angle: function angle(point) {
-      var xDiff, yDiff, angle;
-
+      var xDiff, yDiff;
       xDiff = point.x - this.x;
       yDiff = point.y - this.y;
-
       return Math.atan2(yDiff, xDiff);
     },
 
     isCollide: function isCollide(rect) {
       //var rect = element.getBoundingClientRect();
-
       return this.x > rect.left && this.y > rect.top &&
              this.x < rect.right + rect.width && this.y < rect.bottom + rect.height;
     },
@@ -157,11 +152,13 @@
     },
 
     spawn: function spawn() {
+      // show comet in DOM
+
       game.comets.push(this);
     }
   };
 
- // runner
+  // runner
   game = new Game();
   game.init();
   game.start();
