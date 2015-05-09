@@ -1,58 +1,62 @@
 (function cometSpawner() {
   var spawnedComets = [];
 
-  function Comet(startPos, startSpeed, startAngle) {
-    this.startPos = startPos;
-    this.startSpeed = startSpeed;
-    this.startAngle = startAngle;
+  /************
+    Game
+  ************/
+  function Game() {
+    this.ignoredElements = ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
+    this.fps = 50;
   }
 
-  Comet.prototype.spawn = function spawn() {
-    var cometInDom = document.createElement('comet');
-    cometInDom.addEventListener('collision', function () {
-
-    });
-    spawnedComets.push(this);
-  };
-
-  Comet.prototype.die =  function die() {
-    for (let cometIndex in spawnedComets) {
-      var comet = spawnedComets[cometIndex];
-      if (comet.startPos === this.startPos &&
-          comet.length = this.length &&
-          comet.startAngle = this.startAngle) {
-        spawnedComets.splice(cometIndex);
-      }
+  Game.prototype = {
+    start: function start() {
+      this.iframe = document.createElement('iframe');
     }
   };
 
-  Comet.prototype.consume = function consume() {
+  /************
+    Comet
+  ************/
+  function Comet(x, y) {
+    this.x = x;
+    this.y = y;
+  }
 
+  Comet.prototype = {
+    length: function length(point) {
+      var xDiff, yDiff, length;
+
+      xDiff = point.x - this.x;
+      yDiff = point.y - this.y;
+
+      return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+    },
+
+    angle: function angle(point) {
+      var xDiff, yDiff, angle;
+
+      xDiff = point.x - this.x;
+      yDiff = point.y - this.y;
+
+      return Math.atan2(yDiff, xDiff);
+    },
+
+    isCollide: function isCollide(element) {
+      var rect = element.getBoundingClientRect();
+
+      return this.x > rect.left && this.y > rect.top &&
+             this.x < rect.right + rect.width && this.y < rect.bottom + rect.height;
+    },
+
+    move: function move() {
+
+    },
+
+    spawn: function spawn() {
+
+    },
   };
-
-  Comet.prototype.move = function move() {
-    
-  };
-
-  function createNewComet(startPos, length, startAngle) {
-    var newComet = new Comet(startPos, length, startAngle)
-    newComet.spawn();
-  }
-
-  function getLengthBetween(mouseStartPos, mouseEndPos) {
-    var length = Math.sqrt(
-      (mouseStartPos.x * mouseStartPos.x + mouseStartPos.y * mouseStartPos.y) -
-      (mouseEndPos.x * mouseEndPos.x + mouseEndPos.y * mouseEndPos.y)
-    );
-    return length;
-  }
-
-  function getAngleOf(mouseStartPos, mouseEndPos) {
-    var radians = Math.inverseTan(
-      (mouseEndPos.y - mouseStartPos.y) / (mouseEndPos.x - mouseEndPos.x)
-    );
-    return radians;
-  }
 
   (function addUserEventListeners() {
     var $body = document.getElementByTagName('body')[0],
