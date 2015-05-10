@@ -149,7 +149,7 @@
   function Comet(x, y) {
     this.x = x;
     this.y = y;
-    this.size = 5;
+    this.size = 30;
     this.shape = new Path2D();
   }
 
@@ -170,8 +170,8 @@
 
     move: function move() {
       // move towards denser elements
-
-
+      //this.shape.moveTo(this.x, this.y);
+      //game.canvas.getContext('2d').fill(this.shape);
     },
 
     trail: function trail(rect) {
@@ -186,8 +186,8 @@
     },
 
     spawn: function spawn() {
-      this.shape.arc(100, 35, 25, 0, 2 * Math.PI);
-      this.shape.moveTo(this.x, this.y);
+      this.shape.rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+      game.canvas.getContext('2d').fill(this.shape);
       game.comets.push(this);
     }
   };
