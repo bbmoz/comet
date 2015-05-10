@@ -34,8 +34,7 @@
 
     var keysPressed = {
       '18': false, // Alt
-      '17': false, // Control
-      '67': false, // C
+      '16': false, // Shift
       'success': false
     };
     var eventsFuncs = {
@@ -43,9 +42,7 @@
         var key = String(e.keyCode || e.which);
         if (Object.keys(keysPressed).indexOf(key) > -1) {
           keysPressed[key] = true;
-          if (keysPressed['18'] &&
-              keysPressed['17'] &&
-              keysPressed['67']) {
+          if (keysPressed['18'] && keysPressed['16']) {
             keysPressed['success'] = true;
           }
         }
@@ -117,7 +114,7 @@
 
       for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
         eventsKey = eventsKeys[i];
-        this.canvas.addEventListener(eventsKey, this.events[eventsKey]);
+        document.addEventListener(eventsKey, this.events[eventsKey]);
       }
 
       //loop = setInterval(this.update, 1000 / this.fps);
@@ -138,7 +135,7 @@
 
       for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
         eventsKey = eventsKeys[i];
-        this.canvas.removeEventListener(eventsKey, this.events[eventsKey]);
+        document.removeEventListener(eventsKey, this.events[eventsKey]);
       }
 
       // remove canvas
