@@ -33,25 +33,27 @@
     this.canvas = document.createElement('canvas');
 
     var keysPressed = {
-      'Alt': false,
-      'Win': false, 'OS': false,
-      'c': false,
+      '18': false, // Alt
+      '17': false, // Control
+      '67': false, // C
       'success': false
     };
     var eventsFuncs = {
       keydownEvent: function keydown(e) {
-        if (e.key in Object.keys(keysPressed)) {
-          keysPressed[e.key] = true;
-          if (keysPressed['Alt'] &&
-              (keysPressed['Win'] || keysPressed['OS']) &&
-              keysPressed['c']) {
+        var key = String(e.keyCode || e.which);
+        if (Object.keys(keysPressed).indexOf(key) > -1) {
+          keysPressed[key] = true;
+          if (keysPressed['18'] &&
+              keysPressed['17'] &&
+              keysPressed['67']) {
             keysPressed['success'] = true;
           }
         }
       },
       keyupEvent: function keyup(e) {
-        if (e.key in Object.keys(keysPressed)) {
-          keysPressed[e.key] = false;
+        var key = String(e.keyCode || e.which);
+        if (Object.keys(keysPressed).indexOf(key) > -1) {
+          keysPressed[key] = false;
           if (keysPressed['success']) {
             keysPressed['success'] = false;
           }
