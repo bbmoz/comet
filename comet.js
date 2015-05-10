@@ -15,9 +15,10 @@
     },
 
     weightElements: function weightElements() {
-      var items = document.body.getElementsByTagName('*');
+      var items = document.body.getElementsByTagName('*'),
+          i, itemsLen;
 
-      for (let i = 0, itemsLen = items.length; i < itemsLen; i += 1) {
+      for (i = 0, itemsLen = items.length; i < itemsLen; i += 1) {
 
       }
     }
@@ -64,7 +65,8 @@
             comet.spawn();
           }
         } else if (e.button === 2) {
-          for (let i = 0, cometsLen = game.comets.length; i < cometsLen; i += 1) {
+          var i, cometsLen;
+          for (i = 0, cometsLen = game.comets.length; i < cometsLen; i += 1) {
             if (game.comets[i].isCollide({ left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY })) {
               game.comets.splice(i, 1);
               break;
@@ -90,17 +92,22 @@
       }
     };
 
-    this.events = new Map();
-    events.set('keydown', eventsFuncs.keydownEvent);
-    events.set('keyup', eventsFuncs.keyupEvent);
-    events.set('click', eventsFuncs.clickEvent);
-    events.set('resize', eventsFuncs.resizeEvent);
+    this.events = {
+      'keydown': eventsFuncs.keydownEvent,
+      'keyup': eventsFuncs.keyupEvent,
+      'click': eventsFuncs.clickEvent,
+      'resize': eventsFuncs.resizeEvent
+    };
   }
 
   Game.prototype = {
     init: function init() {
-      for (let [eventName, eventFunc] of this.events.entries()) {
-        $body.addEventListener(eventName, eventFunc);
+      var eventsKeys = Object.keys(this.events),
+          i, eventsLen, eventsKey;
+
+      for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
+        eventsKey = eventsKeys[i];
+        $body.addEventListener(eventsKey, this.events[eventsKey]);
       }
     },
 
@@ -112,7 +119,7 @@
       this.canvas.style.height = htmlSize.height + 'px';
       this.canvas.className = 'comet-canvas';
       document.body.appendChild(this.canvas);
-      loop = setInterval(game.update, 1000 / this.fps);
+      //loop = setInterval(this.update, 1000 / this.fps);
     },
 
     update: function update() {
@@ -123,8 +130,12 @@
 
     end: function end() {
       clearInterval(loop);
-      for (let [eventName, eventFunc] of this.events.entries()) {
-        $body.removeEventListener(eventName, eventFunc);
+      var eventsKeys = Object.keys(this.events),
+          i, eventsLen, eventsKey;
+
+      for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
+        eventsKey = eventsKeys[i];
+        $body.removeEventListener(eventsKey, this.events[eventsKey]);
       }
       document.body.removeChild(this.canvas);
     }
