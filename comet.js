@@ -1,20 +1,31 @@
 (function cometSpawner() {
-  var $body = document.getElementByTagName('body')[0],
+  var $body = document.getElementsByTagName('body')[0],
       game, loop,
       resizeRunning = false;
 
-  var Utility = {
+  /******************
+    Utility Object
+  *******************/
+  var utility = {
     htmlSize: function htmlSize() {
       return {
         width: document.documentElement.clientWidth,
         height: document.documentElement.clientHeight
       };
+    },
+
+    weightElements: function weightElements() {
+      var items = document.body.getElementsByTagName('*');
+
+      for (let i = 0, itemsLen = items.length; i < itemsLen; i += 1) {
+
+      }
     }
   };
 
-  /***************
-    Game Object
-  ****************/
+  /******************
+    Game Prototype
+  *******************/
   function Game() {
     this.ignoredElements = ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
     this.fps = 50;
@@ -27,60 +38,63 @@
       'c': false,
       'success': false
     };
-    function keydownEvent(e) {
-      if (e.key in keysPressed) {
-        keysPressed[e.key] = true;
-        if (keysPressed['Alt'] &&
-            (keysPressed['Win'] || keysPressed['OS']) &&
-            keysPressed['c']) {
-          keysPressed['success'] = true;
-        }
-      }
-    };
-    function keyupEvent(e) {
-      if (e.key in keysPressed) {
-        keysPressed[e.key] = false;
-        if (keysPressed['success']) {
-          keysPressed['success'] = false;
-        }
-      }
-    };
-    function clickEvent(e) {
-      if (e.button === 0) {
-        if (keysPressed['success']) {
-          var comet = new Comet(e.clientX, e.clientY);
-          comet.spawn();
-        }
-      } else if (e.button === 2) {
-        for (let i = 0, cometsLength = game.comets.length; i < cometsLength; i += 1) {
-          if (game.comets[i].isCollide({ left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY })) {
-            game.comets.splice(i, 1);
+    var eventsFuncs = {
+      keydownEvent: function keydown(e) {
+        if (e.key in Object.keys(keysPressed)) {
+          keysPressed[e.key] = true;
+          if (keysPressed['Alt'] &&
+              (keysPressed['Win'] || keysPressed['OS']) &&
+              keysPressed['c']) {
+            keysPressed['success'] = true;
           }
         }
-      }
-    };
-    function resizeEvent() {
-      function resizeCanvas() {
-        this.canvas.style.display = 'none';
-        var htmlSize = Utility.htmlSize();
-        this.canvas.setAttribute('width', htmlSize.width);
-        this.canvas.setAttribute('height', htmlSize.height);
-        resizeRunning = false;
-      }
+      },
+      keyupEvent: function keyup(e) {
+        if (e.key in Object.keys(keysPressed)) {
+          keysPressed[e.key] = false;
+          if (keysPressed['success']) {
+            keysPressed['success'] = false;
+          }
+        }
+      },
+      clickEvent: function click(e) {
+        if (e.button === 0) {
+          if (keysPressed['success']) {
+            var comet = new Comet(e.clientX, e.clientY);
+            comet.spawn();
+          }
+        } else if (e.button === 2) {
+          for (let i = 0, cometsLen = game.comets.length; i < cometsLen; i += 1) {
+            if (game.comets[i].isCollide({ left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY })) {
+              game.comets.splice(i, 1);
+              break;
+            }
+          }
+        }
+      },
+      resizeEvent: function resize(e) {
+        function resizeCanvas() {
+          this.canvas.style.display = 'none';
+          var htmlSize = utility.htmlSize();
+          this.canvas.setAttribute('width', htmlSize.width);
+          this.canvas.setAttribute('height', htmlSize.height);
+          resizeRunning = false;
+        }
 
-      if (!resizeRunning) {
-        resizeRunning = true;
-        if (window.requestAnimationFrame) {
-          window.requestAnimationFrame(resizeCanvas);
+        if (!resizeRunning) {
+          resizeRunning = true;
+          if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(resizeCanvas);
+          }
         }
       }
     };
 
     this.events = new Map();
-    events.set('keydown', keydownEvent);
-    events.set('keyup', keyupEvent);
-    events.set('click', clickEvent);
-    events.set('resize', resizeEvent);
+    events.set('keydown', eventsFuncs.keydownEvent);
+    events.set('keyup', eventsFuncs.keyupEvent);
+    events.set('click', eventsFuncs.clickEvent);
+    events.set('resize', eventsFuncs.resizeEvent);
   }
 
   Game.prototype = {
@@ -91,14 +105,14 @@
     },
 
     start: function start() {
-      var htmlSize = Utility.htmlSize();
+      var htmlSize = utility.htmlSize();
       this.canvas.setAttribute('width', htmlSize.width);
       this.canvas.setAttribute('height', htmlSize.height);
       this.canvas.style.width = htmlSize.width + 'px';
       this.canvas.style.height = htmlSize.height + 'px';
       this.canvas.className = 'comet-canvas';
       document.body.appendChild(this.canvas);
-      loop = setInterval(game.update, 1000 / game.fps);
+      loop = setInterval(game.update, 1000 / this.fps);
     },
 
     update: function update() {
@@ -116,13 +130,14 @@
     }
   };
 
-  /***************
-    Comet Object
-  ****************/
+  /******************
+    Comet Prototype
+  *******************/
   function Comet(x, y) {
     this.x = x;
     this.y = y;
     this.size = 5;
+    this.shape = new Path2D();
   }
 
   Comet.prototype = {
@@ -140,25 +155,33 @@
       return Math.atan2(yDiff, xDiff);
     },
 
-    isCollide: function isCollide(rect) {
-      //var rect = element.getBoundingClientRect();
-      return this.x > rect.left && this.y > rect.top &&
-             this.x < rect.right + rect.width && this.y < rect.bottom + rect.height;
-    },
-
     move: function move() {
       // move towards denser elements
 
+
+    },
+
+    trail: function trail(rect) {
+      //var rect = element.getBoundingClientRect();
+      var isCollide =
+        this.x > rect.left && this.y > rect.top &&
+        this.x < rect.right + rect.width && this.y < rect.bottom + rect.height;
+
+      if (isCollide) {
+        // render comet trails by consuming colliding element (increase size and add colors)
+      }
     },
 
     spawn: function spawn() {
-      // show comet in DOM
-
+      this.shape.arc(100, 35, 25, 0, 2 * Math.PI);
+      this.shape.moveTo(this.x, this.y);
       game.comets.push(this);
     }
   };
 
-  // runner
+  /******************
+    Game Runner
+  *******************/
   game = new Game();
   game.init();
   game.start();
