@@ -1,6 +1,5 @@
 (function cometSpawner() {
-  var $body = document.getElementsByTagName('body')[0],
-      game, loop,
+  var game, loop,
       resizeRunning = false;
 
   /******************
@@ -101,24 +100,24 @@
   }
 
   Game.prototype = {
-    init: function init() {
+    start: function start() {
+      // add canvas
+      var htmlSize = utility.htmlSize();
+
+      this.canvas.setAttribute('width', htmlSize.width);
+      this.canvas.setAttribute('height', htmlSize.height);
+      this.canvas.id = 'comet-canvas';
+      document.body.appendChild(this.canvas);
+
+      // add listeners
       var eventsKeys = Object.keys(this.events),
           i, eventsLen, eventsKey;
 
       for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
         eventsKey = eventsKeys[i];
-        $body.addEventListener(eventsKey, this.events[eventsKey]);
+        this.canvas.addEventListener(eventsKey, this.events[eventsKey]);
       }
-    },
 
-    start: function start() {
-      var htmlSize = utility.htmlSize();
-      this.canvas.setAttribute('width', htmlSize.width);
-      this.canvas.setAttribute('height', htmlSize.height);
-      this.canvas.style.width = htmlSize.width + 'px';
-      this.canvas.style.height = htmlSize.height + 'px';
-      this.canvas.className = 'comet-canvas';
-      document.body.appendChild(this.canvas);
       //loop = setInterval(this.update, 1000 / this.fps);
     },
 
@@ -129,14 +128,18 @@
     },
 
     end: function end() {
-      clearInterval(loop);
+      //clearInterval(loop);
+
+      // remove listeners
       var eventsKeys = Object.keys(this.events),
           i, eventsLen, eventsKey;
 
       for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
         eventsKey = eventsKeys[i];
-        $body.removeEventListener(eventsKey, this.events[eventsKey]);
+        this.canvas.removeEventListener(eventsKey, this.events[eventsKey]);
       }
+
+      // remove canvas
       document.body.removeChild(this.canvas);
     }
   };
@@ -194,6 +197,6 @@
     Game Runner
   *******************/
   game = new Game();
-  game.init();
   game.start();
+  console.log(game);
 }());
