@@ -1,123 +1,151 @@
 (function cometSpawner() {
-  var game, loop,
-      resizeRunning = false;
-
-  /******************
-    Utility Object
-  *******************/
-  var utility = {
-    htmlSize: function htmlSize() {
-      return {
-        width: document.documentElement.clientWidth,
-        height: document.documentElement.clientHeight
-      };
-    },
-
-    weightElements: function weightElements() {
-      var items = document.body.getElementsByTagName('*'),
-          i, itemsLen;
-
-      for (i = 0, itemsLen = items.length; i < itemsLen; i += 1) {
-
-      }
-    }
-  };
+  var game;
 
   /******************
     Game Prototype
   *******************/
   function Game() {
-    this.ignoredElements = ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
-    this.fps = 50;
+    this.ignoredElements =
+      ['html', 'head', 'body', 'script', 'style', 'link', 'meta', 'br', 'hr'];
+    this.ignoredLinks = ['a', 'input', 'button']
+    this.fps = 10;
     this.comets = [];
-    this.canvas = document.createElement('canvas');
-
-    var keysPressed = {
-      '18': false, // Alt
-      '16': false, // Shift
-      'success': false
-    };
-    var eventsFuncs = {
-      keydownEvent: function keydown(e) {
-        var key = String(e.keyCode || e.which);
-        if (Object.keys(keysPressed).indexOf(key) > -1) {
-          keysPressed[key] = true;
-          if (keysPressed['18'] && keysPressed['16']) {
-            keysPressed['success'] = true;
-          }
-        }
-      },
-      keyupEvent: function keyup(e) {
-        var key = String(e.keyCode || e.which);
-        if (Object.keys(keysPressed).indexOf(key) > -1) {
-          keysPressed[key] = false;
-          if (keysPressed['success']) {
-            keysPressed['success'] = false;
-          }
-        }
-      },
-      clickEvent: function click(e) {
-        if (e.button === 0) {
-          if (keysPressed['success']) {
-            var comet = new Comet(e.clientX, e.clientY);
-            comet.spawn();
-          }
-        } else if (e.button === 2) {
-          var i, cometsLen;
-          for (i = 0, cometsLen = game.comets.length; i < cometsLen; i += 1) {
-            if (game.comets[i].isCollide({ left: e.clientX, right: e.clientX, top: e.clientY, bottom: e.clientY })) {
-              game.comets.splice(i, 1);
-              break;
-            }
-          }
-        }
-      },
-      resizeEvent: function resize(e) {
-        function resizeCanvas() {
-          this.canvas.style.display = 'none';
-          var htmlSize = utility.htmlSize();
-          this.canvas.setAttribute('width', htmlSize.width);
-          this.canvas.setAttribute('height', htmlSize.height);
-          resizeRunning = false;
-        }
-
-        if (!resizeRunning) {
-          resizeRunning = true;
-          if (window.requestAnimationFrame) {
-            window.requestAnimationFrame(resizeCanvas);
-          }
-        }
-      }
-    };
-
-    this.events = {
-      'keydown': eventsFuncs.keydownEvent,
-      'keyup': eventsFuncs.keyupEvent,
-      'click': eventsFuncs.clickEvent,
-      'resize': eventsFuncs.resizeEvent
-    };
+    this.allElements = [];
+    this.resizeRunning = false;
+    this.linksDisabled = false;
+    this.loop = null;
+    this.canvas = null;
+    this.events = null;
   }
 
   Game.prototype = {
+    init: function init() {
+      (function setUpKeyboardAndMouseEvents() {
+        if (this.events === null) {
+          var keysPressed = {
+            '18': false, // Alt
+            '16': false, // Shift
+            'success': false
+          };
+
+          var eventsFuncs = {
+            keydownEvent: function keydown(e) {
+              var key = String(e.keyCode || e.which);
+              if (Object.keys(keysPressed).indexOf(key) > -1) {
+                keysPressed[key] = true;
+                if (keysPressed['18'] && keysPressed['16']) {
+                  keysPressed['success'] = true;
+                }
+              }
+            },
+            keyupEvent: function keyup(e) {
+              var key = String(e.keyCode || e.which);
+              if (Object.keys(keysPressed).indexOf(key) > -1) {
+                keysPressed[key] = false;
+                if (keysPressed['success']) {
+                  keysPressed['success'] = false;
+                }
+              }
+            },
+            clickEvent: function click(e) {
+              if (e.button === 0) {
+                if (keysPressed['success']) {
+                  var comet = new Comet(e.clientX, e.clientY);
+                  comet.spawn();
+                }
+              } else if (e.button === 2) {
+                var i, cometsLen;
+                for (i = 0, cometsLen = this.comets.length; i < cometsLen;
+                      i += 1) {
+                  if (this.comets[i].isCollide({
+                        left: e.clientX, right: e.clientX,
+                        top: e.clientY, bottom: e.clientY
+                     })) {
+                      // TODO: erase comet shape from DOM
+                      // this.canvas.getContext('2d').erase(this.comets[i].shape);
+                      this.comets.splice(i, 1);
+                      if (this.comets.length === 0) {
+                        this.end();
+                      }
+                      break;
+                  }
+                }
+              }
+            },
+            resizeEvent: function resize(e) {
+              function resizeCanvas() {
+                var htmlSize = this.htmlSize();
+                this.canvas.setAttribute('width', htmlSize.width);
+                this.canvas.setAttribute('height', htmlSize.height);
+                this.resizeRunning = false;
+              }
+
+              if (!this.resizeRunning) {
+                this.resizeRunning = true;
+                if (window.requestAnimationFrame) {
+                  window.requestAnimationFrame(this.resizeCanvas);
+                }
+              }
+            }
+          };
+
+          this.events = {
+            'keydown': eventsFuncs.keydownEvent,
+            'keyup': eventsFuncs.keyupEvent,
+            'click': eventsFuncs.clickEvent,
+            'resize': eventsFuncs.resizeEvent
+          };
+        }
+      }());
+
+      (function sortPageElementsByWeight() {
+        if (this.allElements.length === 0) {
+          (function removeIgnoredElementsAndAddNormalizedWeight() {
+            var htmlSize = this.htmlSize(),
+                maxWeight = htmlSize.width * htmlSize.height;
+            this.allElements = Array.prototype.slice.call(
+                                 document.getElementsByTagName('*'), 0
+                               );
+            var i, elementsLen, element;
+            for (i = 0, elementsLen = this.allElements.length; i < elementsLen; i += 1) {
+              element = this.allElements[i];
+              if (this.ignoredElements.indexOf(element.tagName) > -1) {
+                this.allElements.splice(i, 1);
+                i -= 1;
+                elementsLen -= 1;
+              }
+
+              this.allElements[i].normalizedWeight = (element.clientWidth * element.clientHeight) / maxWeight;
+            }
+          }());
+
+          this.allElements.sort(function sizeCompare(element1, element2) {
+            return element2.normalizedWeight - element1.normalizedWeight;
+          });
+        }
+      }());
+    },
+
     start: function start() {
-      // add canvas
-      var htmlSize = utility.htmlSize();
+      (function addCanvas() {
+        if (document.getElementById('comet-canvas') === null) {
+          var htmlSize = this.htmlSize();
+          this.canvas = document.createElement('canvas');
+          this.canvas.setAttribute('width', htmlSize.width);
+          this.canvas.setAttribute('height', htmlSize.height);
+          this.canvas.id = 'comet-canvas';
+          document.body.appendChild(this.canvas);
+        }
+      }());
 
-      this.canvas.setAttribute('width', htmlSize.width);
-      this.canvas.setAttribute('height', htmlSize.height);
-      this.canvas.id = 'comet-canvas';
-      document.body.appendChild(this.canvas);
-
-      // add listeners
-      var eventsKeys = Object.keys(this.events),
-          i, eventsLen, eventsKey;
-
-      for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
-        eventsKey = eventsKeys[i];
-        document.addEventListener(eventsKey, this.events[eventsKey]);
-      }
-
-      //loop = setInterval(this.update, 1000 / this.fps);
+      (function applyListeners() {
+        var eventsKeys = Object.keys(this.events),
+            i, eventsLen, eventsKey;
+        for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
+          eventsKey = eventsKeys[i];
+          document.addEventListener(eventsKey, this.events[eventsKey]);
+        }
+      }());
     },
 
     update: function update() {
@@ -127,19 +155,25 @@
     },
 
     end: function end() {
-      //clearInterval(loop);
+      clearInterval(this.loop);
 
-      // remove listeners
-      var eventsKeys = Object.keys(this.events),
-          i, eventsLen, eventsKey;
+      (function removeListeners() {
+        var eventsKeys = Object.keys(this.events),
+            i, eventsLen, eventsKey;
+        for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
+          eventsKey = eventsKeys[i];
+          document.removeEventListener(eventsKey, this.events[eventsKey]);
+        }
+      }());
 
-      for (i = 0, eventsLen = eventsKeys.length; i < eventsLen; i += 1) {
-        eventsKey = eventsKeys[i];
-        document.removeEventListener(eventsKey, this.events[eventsKey]);
-      }
-
-      // remove canvas
       document.body.removeChild(this.canvas);
+    },
+
+    htmlSize: function htmlSize() {
+      return {
+        width: document.documentElement.clientWidth,
+        height: document.documentElement.clientHeight
+      };
     }
   };
 
@@ -150,45 +184,49 @@
     this.x = x;
     this.y = y;
     this.size = 30;
-    this.shape = new Path2D();
+    this.shape = null;
   }
 
   Comet.prototype = {
-    length: function length(point) {
-      var xDiff, yDiff;
-      xDiff = point.x - this.x;
-      yDiff = point.y - this.y;
-      return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
-    },
-
-    angle: function angle(point) {
-      var xDiff, yDiff;
-      xDiff = point.x - this.x;
-      yDiff = point.y - this.y;
-      return Math.atan2(yDiff, xDiff);
-    },
-
     move: function move() {
-      // move towards denser elements
+      // TODO: get "gravitationally" pulled by elements based off their sizes (element.normalizedWeight)
+      // TODO: render comet trails by consuming colliding element (increase comet size and add color trails)
+
+      //var rect = element.getBoundingClientRect();
       //this.shape.moveTo(this.x, this.y);
-      //game.canvas.getContext('2d').fill(this.shape);
     },
 
-    trail: function trail(rect) {
-      //var rect = element.getBoundingClientRect();
-      var isCollide =
+    isCollide: function isCollide(rect) {
+      return
         this.x > rect.left && this.y > rect.top &&
         this.x < rect.right + rect.width && this.y < rect.bottom + rect.height;
-
-      if (isCollide) {
-        // render comet trails by consuming colliding element (increase size and add colors)
-      }
     },
 
     spawn: function spawn() {
-      this.shape.rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
-      game.canvas.getContext('2d').fill(this.shape);
-      game.comets.push(this);
+      (function disableLinks() {
+        if (game.linksDisabled === false) {
+          game.ignoredLinks.forEach(function (tagName) {
+            var elements = document.getElementsByTagName(tagName);
+            Array.prototype.forEach.call(elements, function (element) {
+              element.onclick = function (e) { e.preventDefault(); };
+              element.setAttribute('disabled', 'true');
+            });
+          });
+
+          game.linksDisabled = true;
+        }
+      }());
+
+      if (game.loop === null) {
+        game.loop = setInterval(game.update, 1000 / game.fps);
+      }
+
+      (function displayComet() {
+        this.shape = new Path2D();
+        this.shape.rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+        game.canvas.getContext('2d').fill(this.shape);
+        game.comets.push(this);
+      }());
     }
   };
 
@@ -196,6 +234,7 @@
     Game Runner
   *******************/
   game = new Game();
+  game.init();
   game.start();
   console.log(game);
 }());
